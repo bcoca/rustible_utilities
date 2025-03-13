@@ -1,3 +1,5 @@
+mod module_utils;
+
 fn main() {
-    eprintln!("Yolo");
+    println!("Yo!");
 }

@@ -1,15 +1,13 @@
+// extern crate phf;
 extern crate serde;
-extern crate serde_json;
 
-#[macro_use]
-extern crate serde_derive;
-use serde_json::Error;
-use std::collections::HashSet;
+// use std::collections::HashSet;
 // use std::env;
 // use std::fs::File;
 // use std::o::prelude::*;
 // use std::process;
-// used for debug stamp
+// use serde::{Serialize, Deserialize};
+
 
 const DATE_FORMAT_STR: &'static str = "%Y-%m-%d  %H:%M:%S";
 
@@ -22,7 +20,7 @@ fn d_true() -> bool {return true;}
 fn d_v() -> u32 {return 0;}
 fn d_version() -> String {return "0.0".to_string();}
 
-#[derive(Serialize)]
+#[derive(serde::Serialize)]
 struct Deprecation {
     why: String,
     alternatives: String,
@@ -32,10 +30,9 @@ struct Deprecation {
 }
 
 #[macro_export]
-#[stable(feature = "module_utils", since = "0.0.1")]
 macro_rules! ModuleArgs {
     (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
-		#[derive(Deserialize, Default)]
+		#[derive(serde::Deserialize, Default)]
 		#[allow(dead_code)]
         #[derive($($derive),*)]
         $pub struct $name {
@@ -106,10 +103,9 @@ macro_rules! ModuleArgs {
 }
 
 #[macro_export]
-#[stable(feature = "module_utils", since = "0.0.1")]
 macro_rules! ModuleResult {
     (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
-        #[derive(Serialize, Default)]
+        #[derive(serde::Serialize, Default)]
         #[derive($($derive),*)]
         $pub struct $name {
             // required for all Results
