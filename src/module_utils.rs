@@ -7,21 +7,24 @@ extern crate serde;
 // use std::o::prelude::*;
 // use std::process;
 // use serde::{Serialize, Deserialize};
-
+use std::path::{Path, PathBuf};
 
 const DATE_FORMAT_STR: &'static str = "%Y-%m-%d  %H:%M:%S";
 
-fn d_false() -> bool {return false;}
-fn d_sha1() -> String {return "sha1".to_string();}
-// fn d_selinux_fs() -> Vec<str> {return vec!["fuse", "nfs", "vboxsf", "ramfs", "9p", "vfat"];}
-fn d_shell() -> String {return "/bin/sh".to_string();}
-fn d_syslog_facility() -> String {return "INFO".to_string();}
-fn d_true() -> bool {return true;}
-fn d_v() -> u32 {return 0;}
-fn d_version() -> String {return "0.0".to_string();}
+pub struct ArgDefaults {}
+impl ArgDefaults {
+    pub fn r#false() -> bool {false}
+    pub fn sha1() -> String {"sha1".to_string()}
+    // pub fn d_selinux_fs() -> Vec<str> {return vec!["fuse", "nfs", "vboxsf", "ramfs", "9p", "vfat"];}
+    pub fn shell() -> String {"/bin/sh".to_string()}
+    pub fn syslog_facility() -> String {"INFO".to_string()}
+    pub fn r#true() -> bool {true}
+    pub fn v() -> u32 {0}
+    pub fn version() -> String {"0.0".to_string()}
+}
 
 #[derive(serde::Serialize)]
-struct Deprecation {
+pub struct Deprecation {
     why: String,
     alternatives: String,
     version: Option<String>,
@@ -31,26 +34,29 @@ struct Deprecation {
 
 #[macro_export]
 macro_rules! ModuleArgs {
-    (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }) => {
+    ($(#[$struct_meta:meta])*
+    $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty), *}
+//    (#[derive($($derive:meta),*)] $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty,)* }
+    ) => {
+//        #[derive($($derive),*)]
 		#[derive(serde::Deserialize, Default)]
 		#[allow(dead_code)]
-        #[derive($($derive),*)]
         $pub struct $name {
 
 			// ansible common
-			#[serde(alias = "_ansible_check_mode", default = "d_false")]
+			#[serde(alias = "_ansible_check_mode", default = "ArgDefaults::false")]
 			check_mode: bool,
-			#[serde(alias = "_ansible_debug", default = "d_false")]
+			#[serde(alias = "_ansible_debug", default = "ArgDefaults::false")]
 			debug: bool,
-			#[serde(alias = "_ansible_diff", default = "d_false")]
+			#[serde(alias = "_ansible_diff", default = "ArgDefaults::false")]
 			diff: bool,
-			#[serde(alias = "_ansible_keep_remote_files", default = "d_false")]
+			#[serde(alias = "_ansible_keep_remote_files", default = "ArgDefaults::false")]
 			keep_remote_files: bool,
-			#[serde(alias = "_ansible_ignore_unknown_opts", default = "d_false")]
+			#[serde(alias = "_ansible_ignore_unknown_opts", default = "ArgDefaults::false")]
 			ignore_unknown_opts: bool, // normally use #[serde(deny_unknown_fields)] but we want this at runtime?
 			#[serde(alias = "_ansible_module_name")]
 			module_name: String,
-			#[serde(alias = "_ansible_no_log", default = "d_false")]
+			#[serde(alias = "_ansible_no_log", default = "ArgDefaults::false")]
 			no_log: bool,
 			#[serde(alias = "_ansible_remote_tmp")]
 			remote_tmp: Option<String>,
@@ -76,17 +82,18 @@ macro_rules! ModuleArgs {
 		}
 
 		impl $name {
-			$pub fn new(debug: bool, $($field:$type,)*) -> Self{
-                Self{
-                    debug,
+
+			$pub fn new($($field:$type,)*) -> Self {
+                Self {
                     $($field,)*
+                    ..Self::default()
                 }
 			}
 
-			fn from_argsfile(path: &Path) -> ModuleArgs {
+			fn from_argsfile(path: &Path) -> $type {
 			    match std::fs::read_to_string(path) {
 			        Ok(file_contents) => {
-			                let args: ModuleArgs = match serde_json::from_str(&file_contents) {
+			                let args: $type = match serde_json::from_str(&file_contents) {
 			                    Ok(data) => { data },
 			                    Err(e) => {panic!("Unable to parse the provided arguments file ({:?}) as JSON: {:?}", path, e)},
 			                };
@@ -112,18 +119,17 @@ macro_rules! ModuleResult {
 			msg: Option<String>,
 			changed: bool,
 			failed: bool,
+            // Internal, set from ModuleArgs
+            #[serde(skip_serializing)]
+            debug: bool,
+            #[serde(skip_serializing)]
+            module_name: String,
 
             // convey non fatal errors
             warnings: HashSet<String>,
             deprecations: HashSet<String>,
             #[serde(skip_serializing_if = "Option::is_none")]
 			traceback: Option<string>, // TODO; set on fail_json?
-
-            // Internal, set from ModuleArgs
-            #[serde(skip_serializing)]
-            debug: bool,
-            #[serde(skip_serializing)]
-            module_name: String,
 
             $($fpub $field : $type,)*
         }
@@ -135,11 +141,12 @@ macro_rules! ModuleResult {
 					failed,
                     debug,
                     $($field,)*
+                    ..Self::default()
                 }
 			}
 
 			// TODO:: add log
-			fn deprecate(&mut self, deprecation: Deprecation) {
+			fn deprecate(&mut self, deprecation: module_utils::Deprecation) {
 			    if self.debug {
 			        eprintln!("[DEPRECATED] {}", warning);
 			    }
