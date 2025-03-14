@@ -1,39 +1,41 @@
 use serde::Deserialize;
 use serde_yaml;
 use std::any::Any;
-use Vec;
+// use std::env;
+// use std::fs:
+// use std::path::Path;
 
-struct VersionAdded(&str);
 struct Deprecated {
-    why: &str,
-    version: &str,
-    alternatives: &str,
+    why: str,
+    version: str,
+    alternatives: str,
 }
 
-struct AnsibleCommon {
-    name: &str,
+macro_rules! AnsibleCommon {
+    name: str,
     deprecated: Deprecated,
-    version_added: VersionAdded
+    version_added: str,
 }
-
 impl AnsibleCommon {
-    fn new -> AnsibleCommon {
-        AnsibleCommon {
-            deprecated = None
+    fn new() -> Self {
+        Self {
+            deprecated: None
         }
     }
 }
 
-struct EnvVars: AnsibleCommon;
-struct AnsibleVar: AnsibleCommon;
-struct AnsibleCli: AnsibleCommon;
+AnsibleCommon!(EnvVars());
+AnsibleCommon!(AnsibleVar());
+AnsibleCommon!(AnsibleCli());
+
 struct IniEntry {
-    key: &str,
-    section: &str,
+    key: str,
+    section: str,
     deprecated: Deprecated,
     version_added: VersionAdded
 }
 
+#[serde(rename_all = "lowercase")]
 #[derive(Default, Debug, Clone)]
 pub enum ConfigTypes {
     Bool,
@@ -62,29 +64,29 @@ impl ConfigTypes {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct AnsibleSetting: AnsibleCommon {
-    description: &str,
+AnsibleCommon!(pub struct AnsibleSetting {
+    description: str,
     r#type: ConfigTypes,
     default: Any, // default to None
     value: Any,
     env: Vec<EnvVars>,
     ini: Vec<IniEntry>,
     vars: Vec<AnsibleVar>,
-}
+});
 
 impl AnsibleSetting {
-    fn new -> AnsibleSetting {
+    fn new() -> AnsibleSetting {
         AnsibleSetting {
-            r#type = "str",
-            description = "UNDOCUMENTED",
-            default = None,
-            value = None,
-            env = None,
-            ini = None,
-            vars = None,
+            r#type: "str",
+            description: "UNDOCUMENTED",
+            default: None,
+            value: None,
+            env: None,
+            ini: None,
+            vars: None,
         }
     }
 }
 
 
-/// cfg = env!("ANSIBLE_CONFIG")
+// cfg = env!("ANSIBLE_CONFIG")
