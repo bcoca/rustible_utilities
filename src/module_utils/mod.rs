@@ -7,7 +7,7 @@ extern crate serde;
 // use std::o::prelude::*;
 // use std::process;
 // use serde::{Serialize, Deserialize};
-use std::path::{Path, PathBuf};
+// use std::path::{Path, PathBuf};
 
 const DATE_FORMAT_STR: &'static str = "%Y-%m-%d  %H:%M:%S";
 
@@ -90,10 +90,10 @@ macro_rules! ModuleArgs {
                 }
 			}
 
-			fn from_argsfile(path: &Path) -> $type {
+			fn from_argsfile(path: &Path) -> $name {
 			    match std::fs::read_to_string(path) {
 			        Ok(file_contents) => {
-			                let args: $type = match serde_json::from_str(&file_contents) {
+			                let args: $name = match serde_json::from_str(&file_contents) {
 			                    Ok(data) => { data },
 			                    Err(e) => {panic!("Unable to parse the provided arguments file ({:?}) as JSON: {:?}", path, e)},
 			                };
@@ -195,8 +195,4 @@ macro_rules! ModuleResult {
 
 		}
 	}
-}
-
-fn main () {
-    println!("Hello world!");
 }
