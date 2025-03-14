@@ -1,3 +1,4 @@
+mod config;
 mod module_utils;
 
 use std::path::Path;
