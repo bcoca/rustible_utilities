@@ -1,10 +1,14 @@
+extern crate serde;
+extern crate serde_yaml;
+
 use serde::Deserialize;
-use serde_yaml;
+// use serde_yaml;
 use std::any::Any;
 // use std::env;
 // use std::fs:
 // use std::path::Path;
 
+#[derive(serde::Deserialize, Default)]
 struct Deprecated {
     why: str,
     version: str,
@@ -12,9 +16,19 @@ struct Deprecated {
 }
 
 macro_rules! AnsibleCommon {
-    name: str,
-    deprecated: Deprecated,
-    version_added: str,
+    ($(#[$struct_meta:meta])*
+    $pub:vis struct $name:ident { $($fpub:vis $field:ident : $type:ty), *}
+    ) => {
+		#[derive(serde::Deserialize, Default)]
+        #[serde(deny_unknown_fields)]
+		#[allow(dead_code)]
+        $pub struct $name {
+            name: str,
+            deprecated: Deprecated,
+            version_added: str,
+            $($fpub $field : $type,)*
+        }
+    }
 }
 impl AnsibleCommon {
     fn new() -> Self {
@@ -24,10 +38,11 @@ impl AnsibleCommon {
     }
 }
 
-AnsibleCommon!(EnvVars());
-AnsibleCommon!(AnsibleVar());
-AnsibleCommon!(AnsibleCli());
+AnsibleCommon!(pub struct EnvVars{});
+AnsibleCommon!(pub struct AnsibleVar{});
+AnsibleCommon!(pub struct AnsibleCli{});
 
+#[derive(serde::Deserialize, Default)]
 struct IniEntry {
     key: str,
     section: str,
@@ -62,17 +77,16 @@ impl ConfigTypes {
     pub const Tmppath: ConfigTypes = ConfigTypes::Tmp;
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-AnsibleCommon!(pub struct AnsibleSetting {
-    description: str,
-    r#type: ConfigTypes,
-    default: Any, // default to None
-    value: Any,
-    env: Vec<EnvVars>,
-    ini: Vec<IniEntry>,
-    vars: Vec<AnsibleVar>,
-});
+AnsibleCommon!(struct AnsibleSetting {
+        description: str,
+        r#type: ConfigTypes,
+        default: Any, // default to None
+        value: Any,
+        env: Vec<EnvVars>,
+        ini: Vec<IniEntry>,
+        vars: Vec<AnsibleVar>,
+    }
+);
 
 impl AnsibleSetting {
     fn new() -> AnsibleSetting {

@@ -1,0 +1,9 @@
+[lib]
+path = "mod.rs"
+
+[package]
+name = "module_utils"
+description = "Utilities for writing Ansible modules in rust"
+
+[dependencies]
+serde = "1.0.219"

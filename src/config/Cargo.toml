@@ -1,0 +1,10 @@
+[lib]
+path = "mod.rs"
+
+[package]
+name = "config"
+description = "Utilities for loading Ansible controller config in rust"
+
+[dependencies]
+serde = "1.0.219"
+serde_yaml = "0.9.34"
